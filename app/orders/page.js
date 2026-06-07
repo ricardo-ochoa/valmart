@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/context/AuthContext";
+import { seedOrders } from "@/lib/seedOrders";
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 const STATUS = {
@@ -198,6 +199,8 @@ function OrdersTable({ orders }) {
 function OrdersContent() {
   const { orders } = useStore();
   const { isAuthenticated, ready } = useAuth();
+  // Pedidos del usuario (más recientes primero) + seeds siempre al final
+  const allOrders = [...orders, ...seedOrders];
   const searchParams = useSearchParams();
   const router = useRouter();
   const isNew = searchParams.get("new") === "true";
@@ -215,18 +218,6 @@ function OrdersContent() {
     );
   }
 
-  if (orders.length === 0) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-        <Package className="size-16 text-gray-300 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-700 mb-2">No tienes pedidos aún</h2>
-        <p className="text-gray-500 mb-6">Realiza tu primera compra para verla aquí.</p>
-        <Button asChild className="bg-blue-700 hover:bg-blue-800 text-white">
-          <Link href="/">Explorar productos</Link>
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 py-8">
@@ -246,11 +237,11 @@ function OrdersContent() {
           Mis Pedidos
         </h1>
         <span className="text-sm text-gray-500">
-          {orders.length} {orders.length === 1 ? "pedido" : "pedidos"}
+          {allOrders.length} {allOrders.length === 1 ? "pedido" : "pedidos"}
         </span>
       </div>
 
-      <OrdersTable orders={orders} />
+      <OrdersTable orders={allOrders} />
 
       <div className="mt-6 text-center">
         <Button asChild variant="outline">
