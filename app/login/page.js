@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Lock, Mail, Store, Eye, EyeOff } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 
@@ -50,9 +50,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-blue-700 font-bold text-2xl">
-            <Store className="size-7" />
-            Valmart
+          <Link href="/" className="inline-flex items-center justify-center">
+            <img src="/logo-blue.svg" alt="Valmart" className="h-8 w-auto" />
           </Link>
           <p className="text-gray-500 text-sm mt-2">Inicia sesión en tu cuenta</p>
         </div>
