@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import { products, categories } from "@/lib/products";
 
-export default function CatalogClient() {
+export default function CatalogClient({ products }) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("Todos");
+
+  const categories = useMemo(
+    () => ["Todos", ...new Set(products.map((p) => p.category))],
+    [products]
+  );
 
   const filtered = products.filter((p) => {
     const matchesCategory =
@@ -66,7 +70,7 @@ export default function CatalogClient() {
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id || product._id} product={product} />
           ))}
         </div>
       ) : (
