@@ -17,7 +17,7 @@ const ubuntuMono = Ubuntu_Mono({
 });
 
 export const metadata = {
-  title: "Valmart — Tu tienda en línea",
+  title: "Valmar®. Tu tienda en línea",
   description: "Compra los mejores productos al mejor precio en Valmart.",
 };
 

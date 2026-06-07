@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Package, Store, User, LogOut, ChevronDown, LogIn } from "lucide-react";
+import { ShoppingCart, Package, LogOut, ChevronDown, LogIn } from "lucide-react";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -33,12 +33,8 @@ export default function Navbar() {
   return (
     <header className="bg-blue-700 text-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <Link
-          href="/"
-          className="flex items-center gap-2 font-bold text-xl tracking-tight hover:opacity-90 transition-opacity"
-        >
-          <Store className="size-6" />
-          <span>Valmart</span>
+        <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
+          <img src="/logo-white.svg" alt="Valmart" height={26} className="h-[26px] w-auto" />
         </Link>
 
         <nav className="flex items-center gap-1">
