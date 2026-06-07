@@ -6,238 +6,195 @@ import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import {
-  Package, CheckCircle, Truck, Clock, ShoppingBag,
-  Lock, ChevronDown, ChevronUp, Leaf, Zap,
+  Package, CheckCircle, Truck, Clock, ShoppingBag, Lock, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/context/StoreContext";
 import { useAuth } from "@/context/AuthContext";
 
-/* ── Status config ─────────────────────────────────────────── */
+/* ── Helpers ──────────────────────────────────────────────────── */
 const STATUS = {
-  Procesando: { icon: Clock,        cls: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  "En camino":{ icon: Truck,        cls: "bg-blue-100   text-blue-700   border-blue-200"  },
-  Entregado:  { icon: CheckCircle,  cls: "bg-green-100  text-green-700  border-green-200" },
+  Procesando:  { icon: Clock,       cls: "bg-yellow-100 text-yellow-700" },
+  "En camino": { icon: Truck,       cls: "bg-blue-100   text-blue-700"   },
+  Entregado:   { icon: CheckCircle, cls: "bg-green-100  text-green-700"  },
 };
 
-/* ── Score badges ───────────────────────────────────────────── */
-const NUTRI_COLOR = { A:"bg-green-600", B:"bg-lime-500", C:"bg-yellow-400 text-gray-900",
-                       D:"bg-orange-500", E:"bg-red-600" };
-const ECO_COLOR   = { A:"bg-green-600", B:"bg-lime-500", C:"bg-yellow-400 text-gray-900",
-                       D:"bg-orange-500", E:"bg-red-600" };
-const NOVA_COLOR  = { "1":"bg-green-600","2":"bg-lime-500","3":"bg-orange-400","4":"bg-red-600" };
-const NOVA_LABEL  = { "1":"Mín. procesado","2":"Ing. culinarios","3":"Procesado","4":"Ultra-procesado" };
+const NUTRI_CLS = { A:"bg-green-600 text-white", B:"bg-lime-500 text-white",
+                    C:"bg-yellow-400 text-gray-900", D:"bg-orange-500 text-white",
+                    E:"bg-red-600 text-white" };
+const NOVA_LABEL = { "1":"Mín.proc.","2":"Culinario","3":"Procesado","4":"Ultra-proc." };
 
-function ScoreBadge({ label, value, colorMap }) {
-  if (!value) return null;
-  const color = colorMap[value] ?? "bg-gray-400";
+const fmt = (n) => n?.toLocaleString("es-MX", { minimumFractionDigits: 2 }) ?? "—";
+
+/* ── Product rows inside expanded order ───────────────────────── */
+function ProductTable({ items }) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold text-white ${color}`}>
-      {label} {value}
-    </span>
-  );
-}
-
-/* ── Detail row ─────────────────────────────────────────────── */
-function Row({ label, value }) {
-  if (!value) return null;
-  return (
-    <div className="flex gap-2 py-1.5 border-b border-gray-50 last:border-0">
-      <span className="text-xs text-gray-400 w-36 shrink-0">{label}</span>
-      <span className="text-xs text-gray-800 break-words min-w-0">{value}</span>
-    </div>
-  );
-}
-
-/* ── Single order item expanded ─────────────────────────────── */
-function OrderItemDetail({ product, quantity }) {
-  const [showIngredients, setShowIngredients] = useState(false);
-  const subtotal = product.price * quantity;
-  const ing = product.ingredients || "";
-
-  return (
-    <div className="rounded-xl border border-gray-100 bg-gray-50/50 overflow-hidden">
-      {/* Header row */}
-      <div className="flex gap-4 p-4 bg-white border-b border-gray-100">
-        <div className="relative size-20 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-          <Image src={product.image} alt={product.name} fill className="object-cover" sizes="80px" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 leading-snug">{product.name}</p>
-          {product.brand && <p className="text-xs text-blue-600 mt-0.5">{product.brand}</p>}
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            <ScoreBadge label="Nutri" value={product.nutriScore} colorMap={NUTRI_COLOR} />
-            <ScoreBadge label="Eco"   value={product.ecoScore}   colorMap={ECO_COLOR}   />
-            {product.novaGroup && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold text-white ${NOVA_COLOR[product.novaGroup] ?? "bg-gray-400"}`}>
-                NOVA {product.novaGroup} · {NOVA_LABEL[product.novaGroup]}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-sm text-gray-500">x{quantity}</p>
-          <p className="text-base font-bold text-gray-900">
-            ${subtotal.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-          </p>
-          <p className="text-xs text-gray-400">${product.price}/u</p>
-        </div>
-      </div>
-
-      {/* 15-field detail grid */}
-      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-        <Row label="SKU / Código"       value={product.sku} />
-        <Row label="ID"                  value={product.id} />
-        <Row label="Nombre"              value={product.name} />
-        <Row label="Descripción"         value={product.description} />
-        <Row label="Marca"               value={product.brand} />
-        <Row label="Categoría"           value={product.category} />
-        <Row label="Cantidad del prod."  value={product.productQuantity} />
-        <Row label="Porción recomendada" value={product.servingSize} />
-        <Row label="Nutri-Score"         value={product.nutriScore ? `${product.nutriScore} (A=mejor, E=peor)` : null} />
-        <Row label="Eco-Score"           value={product.ecoScore   ? `${product.ecoScore} (A=mejor, E=peor)` : null} />
-        <Row label="Grupo NOVA"          value={product.novaGroup  ? `${product.novaGroup} – ${NOVA_LABEL[product.novaGroup]}` : null} />
-        <Row label="Empaque"             value={product.packaging} />
-        <Row label="Etiquetas"           value={product.labels} />
-        <Row label="Países de venta"     value={product.countries} />
-        <Row label="Tiendas"             value={product.stores} />
-
-        {/* Ingredientes con toggle */}
-        {ing && (
-          <div className="sm:col-span-2 py-1.5 border-b border-gray-50">
-            <div className="flex items-center justify-between mb-0.5">
-              <span className="text-xs text-gray-400 w-36 shrink-0">Ingredientes</span>
-              {ing.length > 180 && (
-                <button
-                  onClick={() => setShowIngredients((v) => !v)}
-                  className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
-                >
-                  {showIngredients ? <><ChevronUp className="size-3"/>Ver menos</> : <><ChevronDown className="size-3"/>Ver más</>}
-                </button>
-              )}
-            </div>
-            <p className="text-xs text-gray-800 break-words">
-              {showIngredients || ing.length <= 180 ? ing : ing.slice(0, 180) + "…"}
-            </p>
-          </div>
-        )}
-
-        {/* Precios */}
-        <div className="sm:col-span-2 mt-2 pt-2 flex flex-wrap gap-x-6 gap-y-1">
-          <span className="text-xs text-gray-500">Unidades: <strong>{quantity}</strong></span>
-          <span className="text-xs text-gray-500">Precio unitario: <strong>${product.price.toLocaleString("es-MX",{minimumFractionDigits:2})}</strong></span>
-          <span className="text-xs text-gray-500">Subtotal línea: <strong>${subtotal.toLocaleString("es-MX",{minimumFractionDigits:2})}</strong></span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Order card ─────────────────────────────────────────────── */
-function OrderCard({ order }) {
-  const [expanded, setExpanded] = useState(false);
-  const cfg = STATUS[order.status] ?? STATUS["Procesando"];
-  const StatusIcon = cfg.icon;
-  const date = new Date(order.createdAt);
-  const tax = order.total * 0.16;
-  const totalWithTax = order.total + tax;
-  const totalUnits = order.items.reduce((s, i) => s + i.quantity, 0);
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* Order header */}
-      <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <p className="font-mono text-sm font-semibold text-gray-900">{order.id}</p>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {date.toLocaleDateString("es-MX", {
-              year: "numeric", month: "long", day: "numeric",
-              hour: "2-digit", minute: "2-digit",
-            })}
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${cfg.cls}`}>
-            <StatusIcon className="size-3.5" />{order.status}
-          </span>
-          <div className="text-right">
-            <p className="text-lg font-bold text-gray-900">
-              ${totalWithTax.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-            </p>
-            <p className="text-xs text-gray-400">IVA incluido</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Compact item thumbnails */}
-      <div className="px-6 py-3 flex items-center justify-between gap-4 border-b border-gray-50">
-        <div className="flex gap-2 flex-wrap">
-          {order.items.map(({ product, quantity }) => (
-            <div key={product.id} className="relative size-10 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
-              <Image src={product.image} alt={product.name} fill className="object-cover" sizes="40px" />
-              {quantity > 1 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold rounded-full size-4 flex items-center justify-center">
-                  {quantity}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center gap-4 text-sm text-gray-500 shrink-0">
-          <span>{order.items.length} prod. · {totalUnits} unid.</span>
-          <span>•••• {order.cardLast4}</span>
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-1 text-blue-600 font-medium text-sm hover:underline"
-          >
-            {expanded ? <><ChevronUp className="size-4"/>Ocultar</> : <><ChevronDown className="size-4"/>Ver detalles</>}
-          </button>
-        </div>
-      </div>
-
-      {/* Expanded details */}
-      {expanded && (
-        <div className="px-6 py-4 space-y-4">
-          {/* Delivery info */}
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-600 bg-blue-50 rounded-lg px-4 py-3">
-            <span>Destinatario: <strong>{order.customerName}</strong></span>
-            <span>Dirección: <strong>{order.address}</strong></span>
-            <span>Tarjeta: <strong>•••• {order.cardLast4}</strong></span>
-          </div>
-
-          {/* Product detail cards */}
-          <div className="space-y-3">
-            {order.items.map(({ product, quantity }) => (
-              <OrderItemDetail key={product.id} product={product} quantity={quantity} />
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs border-collapse">
+        <thead>
+          <tr className="bg-gray-100 text-gray-500 font-semibold uppercase tracking-wide">
+            {[
+              "Foto", "SKU", "Nombre", "Descripción", "Marca", "Categoría",
+              "Cant. prod.", "Porción", "Nutri", "Eco", "NOVA",
+              "Empaque", "Etiquetas", "Países", "Precio/u", "Unidades", "Subtotal",
+            ].map((h) => (
+              <th key={h} className="px-2 py-2 text-left whitespace-nowrap border-b border-gray-200 font-medium">
+                {h}
+              </th>
             ))}
-          </div>
-
-          {/* Order totals */}
-          <div className="bg-gray-50 rounded-xl p-4 max-w-xs ml-auto text-sm space-y-1.5">
-            <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span>
-              <span>${order.total.toLocaleString("es-MX",{minimumFractionDigits:2})}</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>IVA (16%)</span>
-              <span>${tax.toLocaleString("es-MX",{minimumFractionDigits:2})}</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Envío</span>
-              <span className="text-green-600 font-medium">Gratis</span>
-            </div>
-            <div className="flex justify-between font-bold text-gray-900 border-t pt-1.5 text-base">
-              <span>Total</span>
-              <span>${totalWithTax.toLocaleString("es-MX",{minimumFractionDigits:2})}</span>
-            </div>
-          </div>
-        </div>
-      )}
+          </tr>
+        </thead>
+        <tbody>
+          {items.map(({ product: p, quantity }) => {
+            const subtotal = p.price * quantity;
+            return (
+              <tr key={p.id} className="border-b border-gray-100 hover:bg-blue-50/40 align-middle">
+                <td className="px-2 py-2">
+                  <div className="relative size-10 rounded overflow-hidden bg-gray-100 shrink-0">
+                    <Image src={p.image} alt={p.name} fill className="object-cover" sizes="40px" />
+                  </div>
+                </td>
+                <td className="px-2 py-2 font-mono text-gray-500 whitespace-nowrap select-all">{p.sku}</td>
+                <td className="px-2 py-2 font-medium text-gray-900 min-w-[140px]">{p.name}</td>
+                <td className="px-2 py-2 text-gray-500 max-w-[180px]">
+                  <span className="line-clamp-2">{p.description || "—"}</span>
+                </td>
+                <td className="px-2 py-2 whitespace-nowrap text-gray-700">{p.brand || "—"}</td>
+                <td className="px-2 py-2 whitespace-nowrap capitalize text-gray-700">{p.category || "—"}</td>
+                <td className="px-2 py-2 whitespace-nowrap text-gray-700">{p.productQuantity || "—"}</td>
+                <td className="px-2 py-2 whitespace-nowrap text-gray-700">{p.servingSize || "—"}</td>
+                <td className="px-2 py-2">
+                  {p.nutriScore
+                    ? <span className={`px-1.5 py-0.5 rounded font-bold ${NUTRI_CLS[p.nutriScore] ?? "bg-gray-300 text-white"}`}>{p.nutriScore}</span>
+                    : <span className="text-gray-300">—</span>}
+                </td>
+                <td className="px-2 py-2">
+                  {p.ecoScore
+                    ? <span className={`px-1.5 py-0.5 rounded font-bold ${NUTRI_CLS[p.ecoScore] ?? "bg-gray-300 text-white"}`}>{p.ecoScore}</span>
+                    : <span className="text-gray-300">—</span>}
+                </td>
+                <td className="px-2 py-2 whitespace-nowrap">
+                  {p.novaGroup
+                    ? <span className="text-gray-700">{p.novaGroup} · {NOVA_LABEL[p.novaGroup]}</span>
+                    : <span className="text-gray-300">—</span>}
+                </td>
+                <td className="px-2 py-2 whitespace-nowrap text-gray-700">{p.packaging || "—"}</td>
+                <td className="px-2 py-2 text-gray-700 max-w-[140px]">
+                  <span className="line-clamp-2">{p.labels || "—"}</span>
+                </td>
+                <td className="px-2 py-2 whitespace-nowrap text-gray-700">{p.countries || "—"}</td>
+                <td className="px-2 py-2 whitespace-nowrap font-medium text-gray-900">${fmt(p.price)}</td>
+                <td className="px-2 py-2 text-center font-medium text-gray-900">{quantity}</td>
+                <td className="px-2 py-2 whitespace-nowrap font-bold text-gray-900">${fmt(subtotal)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
 
-/* ── Main content ───────────────────────────────────────────── */
+/* ── Order totals row ─────────────────────────────────────────── */
+function OrderTotals({ total }) {
+  const tax = total * 0.16;
+  return (
+    <div className="flex justify-end px-4 py-3 bg-gray-50 border-t border-gray-200 gap-6 text-sm">
+      <span className="text-gray-500">Subtotal: <strong className="text-gray-900">${fmt(total)}</strong></span>
+      <span className="text-gray-500">IVA 16%: <strong className="text-gray-900">${fmt(tax)}</strong></span>
+      <span className="text-gray-700 font-semibold">Total: <strong className="text-blue-700 text-base">${fmt(total + tax)}</strong></span>
+    </div>
+  );
+}
+
+/* ── Main orders table ────────────────────────────────────────── */
+function OrdersTable({ orders }) {
+  const [expandedId, setExpandedId] = useState(null);
+
+  const toggle = (id) => setExpandedId((prev) => (prev === id ? null : id));
+
+  return (
+    <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-blue-700 text-white text-xs uppercase tracking-wide font-semibold">
+              {["ID Pedido","Fecha","Estado","Productos","Unidades","Subtotal","Total (c/IVA)","Cliente","Dirección","Tarjeta",""].map((h) => (
+                <th key={h} className="px-3 py-3 text-left whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order) => {
+              const cfg = STATUS[order.status] ?? STATUS["Procesando"];
+              const StatusIcon = cfg.icon;
+              const date = new Date(order.createdAt);
+              const tax = order.total * 0.16;
+              const totalUnits = order.items.reduce((s, i) => s + i.quantity, 0);
+              const isOpen = expandedId === order.id;
+
+              return (
+                <>
+                  <tr
+                    key={order.id}
+                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${isOpen ? "bg-blue-50/60" : ""}`}
+                  >
+                    <td className="px-3 py-3 font-mono text-xs text-gray-600 whitespace-nowrap select-all">
+                      {order.id}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-gray-600 text-xs">
+                      {date.toLocaleDateString("es-MX", { day:"2-digit", month:"2-digit", year:"2-digit" })}
+                      {" "}
+                      <span className="text-gray-400">
+                        {date.toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit" })}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>
+                        <StatusIcon className="size-3" />
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-center text-gray-700 font-medium">{order.items.length}</td>
+                    <td className="px-3 py-3 text-center text-gray-700 font-medium">{totalUnits}</td>
+                    <td className="px-3 py-3 whitespace-nowrap text-gray-700">${fmt(order.total)}</td>
+                    <td className="px-3 py-3 whitespace-nowrap font-bold text-gray-900">${fmt(order.total + tax)}</td>
+                    <td className="px-3 py-3 whitespace-nowrap text-gray-700">{order.customerName}</td>
+                    <td className="px-3 py-3 text-gray-600 max-w-[160px]">
+                      <span className="line-clamp-1">{order.address}</span>
+                    </td>
+                    <td className="px-3 py-3 font-mono text-gray-500 whitespace-nowrap">•••• {order.cardLast4}</td>
+                    <td className="px-3 py-3">
+                      <button
+                        onClick={() => toggle(order.id)}
+                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap"
+                      >
+                        {isOpen ? <><ChevronUp className="size-3.5"/>Cerrar</> : <><ChevronDown className="size-3.5"/>Detalles</>}
+                      </button>
+                    </td>
+                  </tr>
+
+                  {isOpen && (
+                    <tr key={`${order.id}-detail`} className="bg-gray-50/80">
+                      <td colSpan={11} className="p-0">
+                        <div className="border-t border-blue-100">
+                          <ProductTable items={order.items} />
+                          <OrderTotals total={order.total} />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ── Page ─────────────────────────────────────────────────────── */
 function OrdersContent() {
   const { orders } = useStore();
   const { isAuthenticated, ready } = useAuth();
@@ -272,7 +229,7 @@ function OrdersContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-[1400px] mx-auto px-4 py-8">
       {isNew && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3 text-green-700">
           <CheckCircle className="size-5 shrink-0" />
@@ -283,7 +240,7 @@ function OrdersContent() {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <ShoppingBag className="size-6 text-blue-700" />
           Mis Pedidos
@@ -293,11 +250,7 @@ function OrdersContent() {
         </span>
       </div>
 
-      <div className="space-y-4">
-        {orders.map((order) => (
-          <OrderCard key={order.id} order={order} />
-        ))}
-      </div>
+      <OrdersTable orders={orders} />
 
       <div className="mt-6 text-center">
         <Button asChild variant="outline">
