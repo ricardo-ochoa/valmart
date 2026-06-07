@@ -75,7 +75,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="hola@arco.com"
+                placeholder="email@email.com"
                 className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
