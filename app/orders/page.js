@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Suspense } from "react";
 import { getDB } from "@/lib/mongodb";
 import { seedOrders as staticSeedOrders } from "@/lib/seedOrders";

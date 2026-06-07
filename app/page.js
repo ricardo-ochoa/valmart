@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Suspense } from "react";
 import CatalogClient from "@/components/CatalogClient";
 import { getDB } from "@/lib/mongodb";
