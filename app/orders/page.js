@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import {
-  Package, CheckCircle, Truck, Clock, ShoppingBag, Lock, ChevronDown, ChevronUp,
+  CheckCircle, Truck, Clock, ShoppingBag, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/context/StoreContext";
@@ -110,17 +110,13 @@ function OrderTotals({ total }) {
 
 /* ── Main orders table ────────────────────────────────────────── */
 function OrdersTable({ orders }) {
-  const [expandedId, setExpandedId] = useState(null);
-
-  const toggle = (id) => setExpandedId((prev) => (prev === id ? null : id));
-
   return (
     <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="bg-blue-700 text-white text-xs uppercase tracking-wide font-semibold">
-              {["ID Pedido","Fecha","Estado","Productos","Unidades","Subtotal","Total (c/IVA)","Cliente","Dirección","Tarjeta",""].map((h) => (
+              {["ID Pedido","Fecha","Estado","Productos","Unidades","Subtotal","Total (c/IVA)","Cliente","Dirección","Tarjeta"].map((h) => (
                 <th key={h} className="px-3 py-3 text-left whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -132,14 +128,10 @@ function OrdersTable({ orders }) {
               const date = new Date(order.createdAt);
               const tax = order.total * 0.16;
               const totalUnits = order.items.reduce((s, i) => s + i.quantity, 0);
-              const isOpen = expandedId === order.id;
 
               return (
                 <>
-                  <tr
-                    key={order.id}
-                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${isOpen ? "bg-blue-50/60" : ""}`}
-                  >
+                  <tr key={order.id} className="border-b border-gray-100 bg-white">
                     <td className="px-3 py-3 font-mono text-xs text-gray-600 whitespace-nowrap select-all">
                       {order.id}
                     </td>
@@ -165,26 +157,17 @@ function OrdersTable({ orders }) {
                       <span className="line-clamp-1">{order.address}</span>
                     </td>
                     <td className="px-3 py-3 font-mono text-gray-500 whitespace-nowrap">•••• {order.cardLast4}</td>
-                    <td className="px-3 py-3">
-                      <button
-                        onClick={() => toggle(order.id)}
-                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap"
-                      >
-                        {isOpen ? <><ChevronUp className="size-3.5"/>Cerrar</> : <><ChevronDown className="size-3.5"/>Detalles</>}
-                      </button>
-                    </td>
                   </tr>
 
-                  {isOpen && (
-                    <tr key={`${order.id}-detail`} className="bg-gray-50/80">
-                      <td colSpan={11} className="p-0">
-                        <div className="border-t border-blue-100">
-                          <ProductTable items={order.items} />
-                          <OrderTotals total={order.total} />
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+                  {/* Productos — siempre visibles */}
+                  <tr key={`${order.id}-detail`} className="bg-gray-50/80">
+                    <td colSpan={10} className="p-0">
+                      <div className="border-t border-blue-100">
+                        <ProductTable items={order.items} />
+                        <OrderTotals total={order.total} />
+                      </div>
+                    </td>
+                  </tr>
                 </>
               );
             })}
