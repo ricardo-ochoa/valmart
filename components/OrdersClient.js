@@ -172,9 +172,9 @@ function OrderCard({ order }) {
         <span className="font-mono text-xs text-gray-500 select-all">{order.id}</span>
 
         <span className="text-xs text-gray-400">
-          {date.toLocaleDateString("es-MX", { day:"2-digit", month:"short", year:"numeric" })}
-          {" · "}
-          {date.toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit" })}
+          {date.toLocaleDateString("es-MX", { day:"2-digit", month:"2-digit", year:"2-digit" })}
+          {" "}
+          {date.toLocaleTimeString("es-MX", { hour:"2-digit", minute:"2-digit", hour12: true })}
         </span>
 
         {/* Push right */}
